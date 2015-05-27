@@ -1,5 +1,6 @@
 package com.quipper.exam.test;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
@@ -7,6 +8,11 @@ import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+
+import com.nostra13.universalimageloader.cache.disc.naming.Md5FileNameGenerator;
+import com.nostra13.universalimageloader.core.ImageLoader;
+import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
+import com.nostra13.universalimageloader.core.assist.QueueProcessingType;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -21,7 +27,7 @@ import java.util.TimeZone;
 
 public class MainActivity extends ActionBarActivity implements MainActivityFragment.Callback {
     private MainActivityFragment fragment;
-    private LoadTask loadTask;
+//    private LoadTask loadTask;
 
     private static final SimpleDateFormat IMAGE_TIME_FORMAT = new SimpleDateFormat("yyyyMMddHH", Locale.US);
     private static final SimpleDateFormat LABEL_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:00", Locale.US);
@@ -34,11 +40,21 @@ public class MainActivity extends ActionBarActivity implements MainActivityFragm
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        initImageLoader(getApplicationContext());
         fragment = (MainActivityFragment) getSupportFragmentManager().findFragmentById(R.id.fragment);
-        fragment.setRetainInstance(false);
+        fragment.setRetainInstance(true);
     }
+    public static void initImageLoader(Context context) {
+        ImageLoaderConfiguration.Builder config = new ImageLoaderConfiguration.Builder(context);
+        config.threadPriority(Thread.NORM_PRIORITY - 2);
+        config.denyCacheImageMultipleSizesInMemory();
+        config.diskCacheFileNameGenerator(new Md5FileNameGenerator());
+        config.diskCacheSize(50 * 1024 * 1024); // 50 MiB
+        config.tasksProcessingOrder(QueueProcessingType.LIFO);
+        config.writeDebugLogs();
 
+        ImageLoader.getInstance().init(config.build());
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -64,61 +80,66 @@ public class MainActivity extends ActionBarActivity implements MainActivityFragm
 
     @Override
     public void load() {
-        URL imageUrl;
+//        URL imageUrl;
         Date dateToShow = new Date(new Date().getTime() - 30 * 60 * 1000);
-        String url = String.format("http://www.jma.go.jp/jp/gms/imgs/5/infrared/1/%s00-00.png",
-                IMAGE_TIME_FORMAT.format(dateToShow));
-        try {
-            imageUrl = new URL(url);
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-            return;
-        }
-
-        if (loadTask != null &&
-                loadTask.getStatus() == AsyncTask.Status.RUNNING &&
-                !loadTask.isCancelled()) {
-            return;
-        }
-        loadTask = new LoadTask(fragment);
-        loadTask.execute(imageUrl);
-        fragment.setDateLabel(LABEL_FORMAT.format(dateToShow));
+//        String url = String.format("http://www.jma.go.jp/jp/gms/imgs/5/infrared/1/%s00-00.png",
+//                IMAGE_TIME_FORMAT.format(dateToShow));
+//        try {
+//            imageUrl = new URL(url);
+//        } catch (MalformedURLException e) {
+//            e.printStackTrace();
+//            return;
+//        }
+//
+//        if (loadTask != null &&
+//                loadTask.getStatus() == AsyncTask.Status.RUNNING &&
+//                !loadTask.isCancelled()) {
+//            return;
+//        }
+//        loadTask = new LoadTask(fragment);
+//        loadTask.execute(imageUrl);
+//        fragment.setDateLabel(LABEL_FORMAT.format(dateToShow));
     }
 
-    static class LoadTask extends AsyncTask<URL, Void, List<Bitmap>> {
-        private MainActivityFragment fragment;
-
-        LoadTask(MainActivityFragment fragment) {
-            this.fragment = fragment;
-        }
-
-        @Override
-        protected List<Bitmap> doInBackground(URL... params) {
-            List<Bitmap> results = new ArrayList<>();
-            try {
-                for (URL url : params) {
-                    if (isCancelled()) {
-                        break;
-                    }
-                    URLConnection connection = url.openConnection();
-                    Bitmap bitmap = BitmapFactory.decodeStream(connection.getInputStream());
-                    if (bitmap != null) {
-                        results.add(bitmap);
-                    }
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return results;
-        }
-
-        @Override
-        protected void onPostExecute(List<Bitmap> bitmaps) {
-            super.onPostExecute(bitmaps);
-
-            if (!bitmaps.isEmpty()) {
-                fragment.showImage(bitmaps.get(0));
-            }
-        }
+    @Override
+    public ImageLoader getImageLoader() {
+        return ImageLoader.getInstance();
     }
+
+//    static class LoadTask extends AsyncTask<URL, Void, List<Bitmap>> {
+//        private MainActivityFragment fragment;
+//
+//        LoadTask(MainActivityFragment fragment) {
+//            this.fragment = fragment;
+//        }
+//
+//        @Override
+//        protected List<Bitmap> doInBackground(URL... params) {
+//            List<Bitmap> results = new ArrayList<>();
+//            try {
+//                for (URL url : params) {
+//                    if (isCancelled()) {
+//                        break;
+//                    }
+//                    URLConnection connection = url.openConnection();
+//                    Bitmap bitmap = BitmapFactory.decodeStream(connection.getInputStream());
+//                    if (bitmap != null) {
+//                        results.add(bitmap);
+//                    }
+//                }
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//            return results;
+//        }
+//
+//        @Override
+//        protected void onPostExecute(List<Bitmap> bitmaps) {
+//            super.onPostExecute(bitmaps);
+//
+//            if (!bitmaps.isEmpty()) {
+//                fragment.showImage(bitmaps.get(0));
+//            }
+//        }
+//    }
 }
